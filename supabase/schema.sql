@@ -37,3 +37,11 @@ create policy "demo open access" on public.users
   for all
   using (true)
   with check (true);
+
+-- RLS policies alone aren't enough — Postgres checks table-level privileges first,
+-- and a freshly created table grants nothing to anon/authenticated by default. The
+-- app calls Supabase's REST API as `anon` (the publishable key), so without this
+-- grant every request fails with 42501 "permission denied for table users" even
+-- though the policy above would otherwise allow it.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update on public.users to anon, authenticated;
