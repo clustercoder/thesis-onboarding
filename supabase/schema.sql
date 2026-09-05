@@ -28,15 +28,37 @@ create trigger users_set_updated_at
 
 alter table public.users enable row level security;
 
--- Interim policy: there is no Supabase Auth session backing requests yet, so
--- there's no JWT to scope rows to a user. Access is only as private as the
--- publishable key. Tighten this to scope rows to an authenticated user once
--- real provider sign-in lands (see README) — do not use this open policy for
--- a table holding real user data in production.
+-- Interim policies: there is no Supabase Auth session backing requests yet (sign-in
+-- is currently a client-side stub — see README), so there is no auth.uid() to scope
+-- rows to a signed-in user. Given that, this is split into explicit per-operation
+-- policies rather than a single "for all", and there is deliberately no delete
+-- policy or delete grant below — rows can be created and updated but never removed
+-- through the API, which at least bounds the damage of the open access to
+-- non-destructive operations.
+--
+-- What this does NOT fix: a client holding a row's id can still read or overwrite
+-- that row, and an unfiltered select still returns every row in the table (RLS
+-- can't distinguish "the caller already knows this id" from "the caller is
+-- enumerating everyone's data" without a real identity to check against). Closing
+-- both requires policies scoped to auth.uid() once real provider sign-in issues an
+-- actual Supabase Auth session. Do not use these open policies for a table holding
+-- real user data in production.
 drop policy if exists "demo open access" on public.users;
 drop policy if exists "open access" on public.users;
-create policy "open access" on public.users
-  for all
+drop policy if exists "users can be created" on public.users;
+drop policy if exists "users can be read" on public.users;
+drop policy if exists "users can be updated" on public.users;
+
+create policy "users can be created" on public.users
+  for insert
+  with check (true);
+
+create policy "users can be read" on public.users
+  for select
+  using (true);
+
+create policy "users can be updated" on public.users
+  for update
   using (true)
   with check (true);
 
@@ -44,6 +66,8 @@ create policy "open access" on public.users
 -- and a freshly created table grants nothing to anon/authenticated by default. The
 -- app calls Supabase's REST API as `anon` (the publishable key), so without this
 -- grant every request fails with 42501 "permission denied for table users" even
--- though the policy above would otherwise allow it.
+-- though the policies above would otherwise allow it. Note there is no `delete`
+-- here, matching the policies above.
 grant usage on schema public to anon, authenticated;
 grant select, insert, update on public.users to anon, authenticated;
+revoke delete on public.users from anon, authenticated;

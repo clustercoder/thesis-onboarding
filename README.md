@@ -9,7 +9,8 @@ Brief / Dashboard / Portfolio / Account screens are a separate package and out o
 
 1. **Database** — open the SQL editor on the Supabase project
    (`https://ekstpniiorpabedirdhg.supabase.co`) and run `supabase/schema.sql` once. It creates
-   `public.users`, an `updated_at` trigger, and the RLS/grant setup described below.
+   `public.users`, an `updated_at` trigger, and the RLS policies/grants described in
+   [Data access](#data-access) below. Re-running it is safe (every statement is idempotent).
 2. **Xcode project** — the project is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen)
    from `project.yml`. If you change `project.yml`, regenerate with:
    ```bash
@@ -51,10 +52,14 @@ in the app needs to change.
 
 ## Data access
 
-Supabase RLS on `public.users` is currently open (`for all using (true)`) because there is no
-Supabase Auth session yet to scope rows to a signed-in user — access is bounded only by the
-publishable key. Once real provider sign-in is wired up (see above), tighten this policy to scope
-each row to its authenticated user before storing real user data in production.
+`public.users` has RLS enabled with separate insert/select/update policies (see
+`supabase/schema.sql`) — there is no delete policy or delete grant, so no client can remove a row
+through the API. Reads and writes are otherwise open, because there is no Supabase Auth session
+yet to scope rows to a signed-in user; access is bounded only by the publishable key, which every
+copy of the app ships with. Concretely, this means a client that knows a row's id can read or
+overwrite it, and an unfiltered read returns every row. Once real provider sign-in is wired up
+(see above), replace these with policies scoped to `auth.uid()` before storing real user data in
+production.
 
 ## Testing
 
