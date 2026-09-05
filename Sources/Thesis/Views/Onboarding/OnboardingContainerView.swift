@@ -34,7 +34,7 @@ struct OnboardingContainerView: View {
         .padding(.top, step == .completion ? 0 : 22)
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Theme.Color.background)
+        .background(Theme.Gradient.editorialBackground)
     }
 
     private var header: some View {

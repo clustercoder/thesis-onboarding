@@ -16,7 +16,6 @@ struct AuthView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Invest with a thesis.")
                     .font(Theme.Typography.authHeadline)
-                    .tracking(-0.3)
                     .foregroundStyle(Theme.Color.textPrimary)
                     .lineSpacing(4)
 
@@ -73,7 +72,7 @@ struct AuthView: View {
         .padding(.top, 24)
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Theme.Color.background)
+        .background(Theme.Gradient.editorialBackground)
     }
 }
 

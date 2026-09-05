@@ -9,7 +9,7 @@ struct CompletionView: View {
 
             VStack(spacing: 18) {
                 Text("Your Thesis is ready.")
-                    .font(.system(size: 32, weight: .bold))
+                    .font(Theme.Typography.question(32))
                     .foregroundStyle(Theme.Color.textPrimary)
                     .multilineTextAlignment(.center)
 

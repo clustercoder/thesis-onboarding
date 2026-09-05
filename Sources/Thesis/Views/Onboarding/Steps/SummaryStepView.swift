@@ -6,7 +6,7 @@ struct SummaryStepView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.questionToOptions) {
             Text("Here's how we'll shape Thesis for you.")
-                .font(.system(size: 26, weight: .bold))
+                .font(Theme.Typography.question(26))
                 .foregroundStyle(Theme.Color.textPrimary)
                 .lineSpacing(6)
 
