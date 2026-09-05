@@ -13,10 +13,30 @@ final class StubURLProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
             return
         }
-        let (response, data) = handler(request)
+        let (response, data) = handler(Self.materializingBody(of: request))
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)
         client?.urlProtocolDidFinishLoading(self)
+    }
+
+    /// URLSession delivers a request's body to URLProtocol as `httpBodyStream`, not `httpBody`,
+    /// even when the caller set `httpBody` directly — so a stub inspecting `request.httpBody`
+    /// would otherwise always see nil. Read the stream back into `httpBody` for stub handlers.
+    private static func materializingBody(of request: URLRequest) -> URLRequest {
+        guard request.httpBody == nil, let stream = request.httpBodyStream else { return request }
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        let bufferSize = 4096
+        var buffer = [UInt8](repeating: 0, count: bufferSize)
+        while stream.hasBytesAvailable {
+            let read = stream.read(&buffer, maxLength: bufferSize)
+            if read <= 0 { break }
+            data.append(buffer, count: read)
+        }
+        var materialized = request
+        materialized.httpBody = data
+        return materialized
     }
 
     override func stopLoading() {}

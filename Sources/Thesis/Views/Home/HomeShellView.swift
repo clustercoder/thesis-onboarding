@@ -11,12 +11,16 @@ struct HomeShellView: View {
         TabView(selection: $selectedTab) {
             placeholder(title: "Daily Briefing", subtitle: "Brief")
                 .tag(0)
+                .tabItem { Label("Brief", systemImage: "doc.text") }
             placeholder(title: "Dashboard", subtitle: "Your signals will appear here")
                 .tag(1)
+                .tabItem { Label("Dashboard", systemImage: "square.grid.2x2") }
             placeholder(title: "Portfolio", subtitle: watchlistSummary)
                 .tag(2)
+                .tabItem { Label("Portfolio", systemImage: "chart.line.uptrend.xyaxis") }
             accountTab
                 .tag(3)
+                .tabItem { Label("Account", systemImage: "person.crop.circle") }
         }
         .tabViewStyle(.automatic)
         .background(Theme.Color.background)
