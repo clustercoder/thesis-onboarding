@@ -24,6 +24,15 @@ final class OnboardingViewModelTests: XCTestCase {
         super.tearDown()
     }
 
+    /// Drives the view model from ONB-01 to ONB-02, the precondition every experience-step
+    /// test needs — selectExperience's auto-advance is guarded by `currentStep == .experience`,
+    /// so calling it before this would silently no-op.
+    private func advanceToExperienceStep(firstName: String = "Ada") async throws {
+        viewModel.answers.firstName = firstName
+        viewModel.submitName()
+        try await Task.sleep(nanoseconds: 900_000_000)
+    }
+
     // MARK: - Auth
 
     func testSignInRoutesToNameStepAndClearsPriorAnswers() async {
@@ -50,7 +59,7 @@ final class OnboardingViewModelTests: XCTestCase {
         viewModel.submitName()
 
         XCTAssertTrue(viewModel.nameSubmitted)
-        try await Task.sleep(nanoseconds: 700_000_000)
+        try await Task.sleep(nanoseconds: 900_000_000)
 
         XCTAssertEqual(viewModel.phase, .onboarding(.experience))
     }
@@ -68,6 +77,7 @@ final class OnboardingViewModelTests: XCTestCase {
 
     func testSelectExperienceSetsMicrocopyAndAutoAdvances() async throws {
         await viewModel.signIn(provider: .google)
+        try await advanceToExperienceStep()
         viewModel.selectExperience(.basics)
 
         XCTAssertEqual(viewModel.answers.experience, .basics)
@@ -76,19 +86,20 @@ final class OnboardingViewModelTests: XCTestCase {
             "That's enough to start. Thesis can adapt to how deep you want to go."
         )
 
-        try await Task.sleep(nanoseconds: 700_000_000)
+        try await Task.sleep(nanoseconds: 900_000_000)
         XCTAssertEqual(viewModel.phase, .onboarding(.goals))
     }
 
     // MARK: - ONB-03 Goals
 
-    func testContinueFromGoalsRequiresAtLeastOneSelection() async {
+    func testContinueFromGoalsRequiresAtLeastOneSelection() async throws {
         await viewModel.signIn(provider: .google)
         viewModel.continueFromGoals()
         XCTAssertEqual(viewModel.phase, .onboarding(.name)) // unchanged, still on name until it's navigated to goals
 
+        try await advanceToExperienceStep()
         viewModel.selectExperience(.basics)
-        try? await Task.sleep(nanoseconds: 700_000_000)
+        try await Task.sleep(nanoseconds: 900_000_000)
         XCTAssertEqual(viewModel.phase, .onboarding(.goals))
 
         viewModel.continueFromGoals()
@@ -122,15 +133,16 @@ final class OnboardingViewModelTests: XCTestCase {
 
     func testGoBackPreservesPreviouslyGivenAnswers() async throws {
         await viewModel.signIn(provider: .google)
+        try await advanceToExperienceStep()
         viewModel.selectExperience(.active)
-        try await Task.sleep(nanoseconds: 700_000_000)
+        try await Task.sleep(nanoseconds: 900_000_000)
         XCTAssertEqual(viewModel.phase, .onboarding(.goals))
 
         viewModel.goBack()
 
         XCTAssertEqual(viewModel.phase, .onboarding(.experience))
         XCTAssertEqual(viewModel.answers.experience, .active, "answer should still be set after navigating back")
-        XCTAssertTrue(viewModel.canGoBack == false || viewModel.canGoBack == true) // history integrity smoke check
+        XCTAssertTrue(viewModel.canGoBack, "history should still contain the name step")
     }
 
     // MARK: - Style derivation (ONB-06 -> ONB-10 Style row)
@@ -200,11 +212,11 @@ final class OnboardingViewModelTests: XCTestCase {
 
         viewModel.answers.firstName = "Grace"
         viewModel.submitName()
-        try await Task.sleep(nanoseconds: 700_000_000)
+        try await Task.sleep(nanoseconds: 900_000_000)
         XCTAssertEqual(viewModel.phase, .onboarding(.experience))
 
         viewModel.selectExperience(.professional)
-        try await Task.sleep(nanoseconds: 700_000_000)
+        try await Task.sleep(nanoseconds: 900_000_000)
         XCTAssertEqual(viewModel.phase, .onboarding(.goals))
 
         viewModel.toggleGoal("Managing risk")
@@ -212,11 +224,11 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.phase, .onboarding(.horizon))
 
         viewModel.selectHorizon(.threeToTen)
-        try await Task.sleep(nanoseconds: 1_400_000_000)
+        try await Task.sleep(nanoseconds: 1_600_000_000)
         XCTAssertEqual(viewModel.phase, .onboarding(.volatility))
 
         viewModel.selectVolatility(OptionData.riskBehaviors[0])
-        try await Task.sleep(nanoseconds: 800_000_000)
+        try await Task.sleep(nanoseconds: 950_000_000)
         XCTAssertEqual(viewModel.phase, .onboarding(.behavior))
 
         viewModel.toggleBehavior("I research companies myself")
@@ -228,7 +240,7 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.phase, .onboarding(.focus))
 
         viewModel.selectFocus("Building conviction before I act")
-        try await Task.sleep(nanoseconds: 600_000_000)
+        try await Task.sleep(nanoseconds: 800_000_000)
         XCTAssertEqual(viewModel.phase, .onboarding(.portfolio))
 
         viewModel.selectPortfolio(interested: false)
@@ -242,7 +254,7 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.phase, .onboarding(.completion))
 
         viewModel.enterThesis()
-        try await Task.sleep(nanoseconds: 700_000_000)
+        try await Task.sleep(nanoseconds: 800_000_000)
 
         XCTAssertEqual(viewModel.phase, .appReady)
     }

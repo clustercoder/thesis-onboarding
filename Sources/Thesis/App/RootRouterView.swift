@@ -7,7 +7,7 @@ struct RootRouterView: View {
     var body: some View {
         Group {
             switch viewModel.phase {
-            case .authRequired, .authenticating:
+            case .authRequired:
                 AuthView()
             case .onboarding(let step):
                 OnboardingContainerView(step: step)

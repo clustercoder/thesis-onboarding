@@ -2,7 +2,6 @@ import Foundation
 
 enum AppPhase: Equatable {
     case authRequired
-    case authenticating(AuthProvider)
     case onboarding(OnboardingStepID)
     case appReady
 

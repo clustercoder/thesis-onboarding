@@ -21,6 +21,7 @@ final class OnboardingViewModel: ObservableObject {
     private let authService: AuthServicing
     private let persistence: PersistenceService
     private let supabase: SupabaseServicing
+    private var pendingSyncTask: Task<Void, Never>?
 
     init(
         authService: AuthServicing = AuthService(),
@@ -54,12 +55,19 @@ final class OnboardingViewModel: ObservableObject {
         }
 
         guard let localId else { return }
-        if let remote = try? await supabase.fetchUser(id: localId) {
+        guard let remote = try? await supabase.fetchUser(id: localId) else { return }
+
+        // The local cache is the source of truth for in-progress answers (it's what
+        // resolved `phase` above), so only let Supabase override anything when it tells us
+        // something the local cache couldn't: that onboarding is already complete. That
+        // covers a reinstall wiping UserDefaults while the Keychain session id survives —
+        // there's no local cache to trust in that case, so remote fills in both the
+        // completion flag and the answers themselves.
+        if remote.onboardingComplete && !onboardingComplete {
+            onboardingComplete = true
             answers = remote.answers
-            onboardingComplete = remote.onboardingComplete
-            if onboardingComplete {
-                phase = .appReady
-            }
+            nameSubmitted = !remote.answers.firstName.isEmpty
+            phase = .appReady
         }
     }
 
@@ -105,7 +113,7 @@ final class OnboardingViewModel: ObservableObject {
         nameSubmitted = true
         persist()
         Task {
-            try? await Task.sleep(nanoseconds: 550_000_000)
+            try? await Task.sleep(nanoseconds: Theme.Motion.nameAdvanceDelay)
             guard currentStep == .name else { return }
             goTo(.experience)
         }
@@ -117,7 +125,7 @@ final class OnboardingViewModel: ObservableObject {
         answers.experience = value
         persist()
         Task {
-            try? await Task.sleep(nanoseconds: 550_000_000)
+            try? await Task.sleep(nanoseconds: Theme.Motion.experienceAdvanceDelay)
             guard currentStep == .experience else { return }
             goTo(.goals)
         }
@@ -146,7 +154,7 @@ final class OnboardingViewModel: ObservableObject {
         answers.horizon = value
         persist()
         Task {
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            try? await Task.sleep(nanoseconds: Theme.Motion.horizonAdvanceDelay)
             guard currentStep == .horizon else { return }
             goTo(.volatility)
         }
@@ -163,7 +171,7 @@ final class OnboardingViewModel: ObservableObject {
         answers.volatilityBehavior = value
         persist()
         Task {
-            try? await Task.sleep(nanoseconds: 650_000_000)
+            try? await Task.sleep(nanoseconds: Theme.Motion.volatilityAdvanceDelay)
             guard currentStep == .volatility else { return }
             goTo(.behavior)
         }
@@ -203,7 +211,7 @@ final class OnboardingViewModel: ObservableObject {
         answers.focus = value
         persist()
         Task {
-            try? await Task.sleep(nanoseconds: 450_000_000)
+            try? await Task.sleep(nanoseconds: Theme.Motion.focusAdvanceDelay)
             guard currentStep == .focus else { return }
             goTo(.portfolio)
         }
@@ -243,7 +251,7 @@ final class OnboardingViewModel: ObservableObject {
     func enterThesis() {
         isCompletionTransitioning = true
         Task {
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            try? await Task.sleep(nanoseconds: Theme.Motion.completionAdvanceDelay)
             onboardingComplete = true
             persist()
             phase = .appReady
@@ -256,6 +264,7 @@ final class OnboardingViewModel: ObservableObject {
         guard let previous = history.popLast() else { return }
         navigationDirection = .backward
         phase = .onboarding(previous)
+        if previous == .name { nameSubmitted = false }
         persist()
     }
 
@@ -277,9 +286,15 @@ final class OnboardingViewModel: ObservableObject {
             onboardingComplete: onboardingComplete
         )
         persistence.save(state)
-        Task {
+
+        // Chain onto any in-flight sync rather than firing an unordered Task per mutation,
+        // so a burst of quick toggles can't land at Supabase out of order.
+        let row = UserRow(state: state)
+        let previous = pendingSyncTask
+        pendingSyncTask = Task {
+            _ = await previous?.value
             do {
-                try await supabase.upsertUser(UserRow(state: state))
+                try await supabase.upsertUser(row)
             } catch {
                 #if DEBUG
                 print("Supabase sync failed: \(error)")

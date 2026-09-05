@@ -56,6 +56,7 @@ enum Theme {
         static let volatilityAdvanceDelay: UInt64 = 650_000_000
         static let focusAdvanceDelay: UInt64 = 450_000_000
         static let completionTransition: Double = 0.5
+        static let completionAdvanceDelay: UInt64 = UInt64(completionTransition * 1_000_000_000)
     }
 
     enum Typography {
