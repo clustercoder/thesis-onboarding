@@ -21,6 +21,14 @@ Onboarding → Completion → a minimal placeholder hand-off into "home" — the
   session to scope rows to. That's fine for a demo — do not reuse this policy for a table holding
   real user data.
 
+## Troubleshooting: "iOS 26.5 is not installed" / flaky simulator destinations
+
+If `xcodebuild`/Xcode complains it can't find a simulator destination, or reports something
+like "iOS 26.5 is not installed. Please download and install the platform from Xcode >
+Settings > Components," your Xcode's SDK version doesn't have a matching Simulator runtime
+installed. Fix it from Xcode > Settings > Components (or `xcodebuild -downloadPlatform iOS`) —
+it's a one-time, multi-GB download unrelated to this project's code.
+
 ## Setup
 
 1. **Database** — open the SQL editor on the Supabase project
