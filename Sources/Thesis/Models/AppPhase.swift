@@ -5,7 +5,7 @@ enum AppPhase: Equatable {
     case onboarding(OnboardingStepID)
     case appReady
 
-    /// Startup routing rule from the handoff spec:
+    /// Startup routing rule:
     /// no local session -> AUTH_REQUIRED; a session with incomplete onboarding -> resume at
     /// the saved step; a session with onboarding already complete -> APP_READY, skipping
     /// Auth and Onboarding entirely (the returning-user bypass).

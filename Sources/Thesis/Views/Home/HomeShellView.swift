@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Deliberately minimal — the handoff spec is explicit that the real home screens
-/// (Brief/Dashboard/Portfolio/Account) are out of scope here. This just proves the
-/// handoff/routing lands somewhere real after onboarding completes.
+/// Deliberately minimal — the real home screens (Brief/Dashboard/Portfolio/Account) are a
+/// separate package and out of scope here. This just proves routing lands somewhere real
+/// after onboarding completes.
 struct HomeShellView: View {
     @EnvironmentObject var viewModel: OnboardingViewModel
     @State private var selectedTab = 0

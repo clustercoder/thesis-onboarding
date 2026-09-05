@@ -8,9 +8,11 @@ enum AuthError: Error, Equatable {
     }
 }
 
-/// Sign-in is simulated for this demo (no GoogleSignIn SDK / AuthenticationServices wired to
-/// real credentials) — it reproduces the reference prototype's ~850ms latency and success path
-/// so the flow, states, and transitions can be evaluated end-to-end.
+/// Lightweight stub standing in for real Google/Apple sign-in (no GoogleSignIn SDK /
+/// AuthenticationServices wired to actual credentials yet) — it models the ~850ms latency and
+/// success path of a real provider round trip so the flow, states, and transitions can be
+/// evaluated end-to-end. Swapping in real providers only requires a new `AuthServicing`
+/// conformance; nothing else in the app depends on this implementation.
 protocol AuthServicing {
     func signIn(provider: AuthProvider) async throws -> UserAccount
 }

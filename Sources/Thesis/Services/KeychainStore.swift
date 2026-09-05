@@ -3,7 +3,7 @@ import Security
 
 /// Minimal Keychain get/set/delete wrapper for a single string value (the local session id).
 /// Keychain items survive app reinstalls on the same device by default, which is what lets
-/// this demo distinguish a returning device from a genuinely new one without a real backend.
+/// the app distinguish a returning device from a genuinely new one ahead of a real backend session.
 enum KeychainStore {
     private static let service = "com.thesis.onboarding.session"
 

@@ -28,12 +28,14 @@ create trigger users_set_updated_at
 
 alter table public.users enable row level security;
 
--- Demo-only policy: this app has no real backend auth session (sign-in is
--- simulated), so there is no Supabase Auth JWT to scope rows to a user.
--- Access is only as private as the publishable key. Do NOT reuse this open
--- policy for a table holding real user data in production.
+-- Interim policy: there is no Supabase Auth session backing requests yet, so
+-- there's no JWT to scope rows to a user. Access is only as private as the
+-- publishable key. Tighten this to scope rows to an authenticated user once
+-- real provider sign-in lands (see README) — do not use this open policy for
+-- a table holding real user data in production.
 drop policy if exists "demo open access" on public.users;
-create policy "demo open access" on public.users
+drop policy if exists "open access" on public.users;
+create policy "open access" on public.users
   for all
   using (true)
   with check (true);
